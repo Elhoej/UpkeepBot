@@ -1,0 +1,15 @@
+# Node.js
+node_modules/
+
+# Environment / Secrets
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+
+# SQLite runtime files
+data/upkeep.db
+data/*.db-shm
+data/*.db-wal
