@@ -1,0 +1,15 @@
+app = "upkeep-bot"
+primary_region = "iad"
+
+[build]
+
+[env]
+  UPKEEP_DB_PATH = "/data/upkeep.db"
+
+[[mounts]]
+  source = "upkeep_data"
+  destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
