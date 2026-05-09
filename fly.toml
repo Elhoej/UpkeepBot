@@ -1,15 +1,28 @@
-app = "upkeepbot"
-primary_region = "lhr"
+# fly.toml app configuration file generated for upkeepbot on 2026-05-09T07:55:14Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'upkeepbot'
+primary_region = 'lhr'
 
 [build]
 
 [env]
-  UPKEEP_DB_PATH = "/data/upkeep.db"
+  UPKEEP_DB_PATH = '/data/upkeep.db'
 
 [[mounts]]
-  source = "upkeep_data"
-  destination = "/data"
+  source = 'upkeep_data'
+  destination = '/data'
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"
+  size = 'shared-cpu-1x'
+  memory = '256mb'
