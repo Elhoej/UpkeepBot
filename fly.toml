@@ -1,4 +1,4 @@
-app = "upkeep-bot"
+app = "upkeepbot"
 primary_region = "iad"
 
 [build]
