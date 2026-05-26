@@ -41,11 +41,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
     console.error(`${interaction.commandName} command failed:`, err);
     const reply = { content: 'Something went wrong handling that command.', flags: MessageFlags.Ephemeral };
     if (interaction.deferred || interaction.replied) {
-      await interaction.followUp(reply).catch(() => {});
+      await interaction.followUp(reply).catch((replyErr) => {
+        console.warn(`[${interaction.commandName}] failed to send error follow-up:`, replyErr.message);
+      });
     } else {
-      await interaction.reply(reply).catch(() => {});
+      await interaction.reply(reply).catch((replyErr) => {
+        console.warn(`[${interaction.commandName}] failed to send error reply:`, replyErr.message);
+      });
     }
   }
 });
 
-client.login(process.env.DISCORD_TOKEN);
+client.login(process.env.DISCORD_TOKEN).catch((err) => {
+  console.error('Failed to log in to Discord:', err);
+  process.exit(1);
+});

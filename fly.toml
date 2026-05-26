@@ -8,6 +8,9 @@ primary_region = 'lhr'
 
 [build]
 
+[deploy]
+  release_command = 'node register.js'
+
 [env]
   UPKEEP_DB_PATH = '/data/upkeep.db'
 

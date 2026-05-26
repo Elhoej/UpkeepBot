@@ -1,5 +1,5 @@
 import { MessageFlags, SlashCommandBuilder } from 'discord.js';
-import { upsertEntry } from '../storage.js';
+import { upsertEntry, listByGuild } from '../storage.js';
 import { formatName } from '../format.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -13,6 +13,7 @@ export const data = new SlashCommandBuilder()
       .setName('name')
       .setDescription('The house/stronghold name.')
       .setRequired(true)
+      .setAutocomplete(true)
       .setMaxLength(100),
   )
   .addIntegerOption((opt) =>
@@ -22,6 +23,18 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
       .setMinValue(1),
   );
+
+export async function autocomplete(interaction) {
+  const focused = interaction.options.getFocused().toLowerCase();
+  const entries = listByGuild(interaction.guildId);
+
+  const matches = entries
+    .filter((e) => e.name.includes(focused))
+    .slice(0, 25)
+    .map((e) => ({ name: formatName(e.name), value: e.name }));
+
+  await interaction.respond(matches);
+}
 
 export async function execute(interaction) {
   const name = interaction.options.getString('name', true).trim().toLowerCase();
