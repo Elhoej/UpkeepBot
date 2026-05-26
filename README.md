@@ -6,6 +6,7 @@ A Discord bot that tracks house upkeep payments for a game and posts an alert in
 
 - `/upkeep <name> <days>` — record that upkeep for `<name>` was just paid and will last `<days>` days. Re-running with the same name updates the entry and resets its alert flags.
 - `/upkeep-list` — list all tracked upkeep entries for the server, showing each entry's expiry time, cycle length, and the user who last paid.
+- `/upkeep-remove <name>` — remove a tracked upkeep entry. Autocompletes the `name` option from the server's existing entries.
 - Hourly background check sends one warning alert per cycle (≤5 days until expiration) and one expiry alert.
 - Entries are scoped per server and persisted to SQLite, so they survive restarts.
 
@@ -19,7 +20,8 @@ A Discord bot that tracks house upkeep payments for a game and posts an alert in
 │   ├── format.js             # Shared name-formatting utilities
 │   └── commands/
 │       ├── upkeep.js         # /upkeep slash command definition + handler
-│       └── upkeep-list.js    # /upkeep-list slash command definition + handler
+│       ├── upkeep-list.js    # /upkeep-list slash command definition + handler
+│       └── upkeep-remove.js  # /upkeep-remove slash command (with autocomplete)
 ├── register.js               # One-shot script: registers slash commands with Discord
 ├── data/upkeep.db            # Created on first run; gitignored
 └── package.json
@@ -93,6 +95,14 @@ The bot replies with the expiration date (rendered as a Discord relative timesta
 ```
 
 Lists every tracked upkeep entry for the server. Each line shows the entry name, whether it expires or has already expired (as a relative timestamp), the cycle length in days, and the user who last paid.
+
+### `/upkeep-remove <name>`
+
+```
+/upkeep-remove MyHouse
+```
+
+Removes the named entry from tracking. The `name` field autocompletes from the server's existing entries — start typing and Discord shows a dropdown of matches. If no entry matches, the bot replies with an ephemeral error.
 
 ## Data
 
