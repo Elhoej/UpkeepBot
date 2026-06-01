@@ -49,6 +49,25 @@ export async function execute(interaction) {
     return;
   }
 
+  // Confirm the bot can actually post alerts in this channel. Slash commands
+  // are deliverable via the interaction webhook without channel perms, so we
+  // have to check explicitly — otherwise the scheduler silently DM-falls-back
+  // (or fails entirely) when the first alert fires days later.
+  const me = await interaction.guild.members.fetchMe();
+  const perms = interaction.channel?.permissionsFor(me);
+  const needed = interaction.channel?.isThread?.()
+    ? ['ViewChannel', 'SendMessagesInThreads']
+    : ['ViewChannel', 'SendMessages'];
+  if (!perms?.has(needed)) {
+    await interaction.reply({
+      content:
+        `I can't post alerts in this channel — I'm missing **${needed.join('** and **')}**. ` +
+        `Grant me access here (or run \`/upkeep\` from a channel where I can post) before tracking upkeep.`,
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   upsertEntry({
     guildId: interaction.guildId,
     name,
