@@ -19,6 +19,29 @@ async function sendAlert(client, entry, content) {
   await channel.send({ content, allowedMentions: { users: [entry.owner_id] } });
 }
 
+// Try the bound channel first; if that fails, fall back to DMing the owner.
+// Returns true if either delivery succeeded.
+async function deliverAlert(client, entry, content) {
+  try {
+    await sendAlert(client, entry, content);
+    return true;
+  } catch (channelErr) {
+    try {
+      const user = await client.users.fetch(entry.owner_id);
+      await user.send({ content, allowedMentions: { users: [entry.owner_id] } });
+      console.warn(
+        `[scheduler] channel send failed for ${entry.guild_id}/${entry.name} (${channelErr.message}); delivered via DM instead.`,
+      );
+      return true;
+    } catch (dmErr) {
+      console.warn(
+        `[scheduler] failed to deliver alert for ${entry.guild_id}/${entry.name}: channel=${channelErr.message}; dm=${dmErr.message}`,
+      );
+      return false;
+    }
+  }
+}
+
 function alertContent(stage, ownerId, displayName, expiresUnix) {
   switch (stage) {
     case STAGE_5D:
@@ -44,18 +67,12 @@ async function checkOnce(client) {
     const display = formatName(entry.name);
 
     if (now >= expiresAt + REMOVAL_GRACE_MS) {
-      try {
-        await sendAlert(
-          client,
-          entry,
-          `🗑️ <@${entry.owner_id}> Upkeep for **${display}** has been expired for over 5 days and has been removed from tracking.`,
-        );
-      } catch (err) {
-        console.warn(
-          `[scheduler] failed to send removal notice for ${entry.guild_id}/${entry.name}:`,
-          err.message,
-        );
-      }
+      await deliverAlert(
+        client,
+        entry,
+        `🗑️ <@${entry.owner_id}> Upkeep for **${display}** has been expired for over 5 days and has been removed from tracking.`,
+      );
+      // Always delete — the grace window is over regardless of notification success.
       deleteEntry(entry.guild_id, entry.name);
       continue;
     }
@@ -68,15 +85,16 @@ async function checkOnce(client) {
     if (msLeft <= 0) targetStage = STAGE_EXPIRED;
 
     if (targetStage > entry.alert_stage) {
-      try {
-        await sendAlert(client, entry, alertContent(targetStage, entry.owner_id, display, expiresUnix));
-      } catch (err) {
-        console.warn(
-          `[scheduler] failed to send stage-${targetStage} alert for ${entry.guild_id}/${entry.name}:`,
-          err.message,
-        );
+      const delivered = await deliverAlert(
+        client,
+        entry,
+        alertContent(targetStage, entry.owner_id, display, expiresUnix),
+      );
+      // Only advance the stage on successful delivery — otherwise we'd silently
+      // swallow this alert and never retry on the next tick.
+      if (delivered) {
+        setAlertStage(entry.guild_id, entry.name, targetStage);
       }
-      setAlertStage(entry.guild_id, entry.name, targetStage);
     }
   }
 }
