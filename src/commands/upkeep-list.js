@@ -22,11 +22,21 @@ export async function execute(interaction) {
   }
 
   const now = Date.now();
+  // Mirror the scheduler's alert-stage emojis so list status matches the alerts
+  // that will (or already did) fire. See alertContent() in src/scheduler.js.
+  const stageEmoji = (msLeft) => {
+    if (msLeft <= 0) return '❗';
+    if (msLeft <= 1 * DAY_MS) return '🚨';
+    if (msLeft <= 2 * DAY_MS) return '⚠️';
+    if (msLeft <= 5 * DAY_MS) return '🔔';
+    return '•';
+  };
   const lines = entries.map((e) => {
     const expiresAt = e.last_paid_at + e.duration_days * DAY_MS;
     const expiresUnix = Math.floor(expiresAt / 1000);
     const verb = expiresAt > now ? 'expires' : 'expired';
-    return `• **${formatName(e.name)}** — ${verb} <t:${expiresUnix}:R> · ${e.duration_days}d cycle · paid by <@${e.owner_id}>`;
+    const icon = stageEmoji(expiresAt - now);
+    return `${icon} **${formatName(e.name)}** — ${verb} <t:${expiresUnix}:R> · ${e.duration_days}d cycle · paid by <@${e.owner_id}>`;
   });
 
   // Greedily pack lines into chunks that fit inside one embed description.
